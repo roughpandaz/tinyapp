@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const crypto = require('crypto');
+const morgan = require('morgan');
 
 const app = express();
 const PORT = 8080; // default port 8080
@@ -8,6 +9,7 @@ const PORT = 8080; // default port 8080
 app.set("view engine", "ejs");
 
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(morgan('combined'));
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -30,7 +32,7 @@ app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = generateRandomString(longURL);
   urlDatabase[shortURL] = longURL;
-  res.redirect("/urls");
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/urls/new", (req, res) => {
@@ -53,6 +55,25 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { shortURL, longURL: urlDatabase[shortURL] };
   res.render("urls_show", templateVars);
 });
+
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const shortURL = req.params.shortURL;
+  delete urlDatabase[shortURL];
+  res.redirect(`/urls/`);
+});
+
+/**
+ * EDIT: Long URL
+ */
+app.post("/urls/:shortURL/edit", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = req.body.longURL;
+  console.log(longURL);
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls/`);
+});
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
