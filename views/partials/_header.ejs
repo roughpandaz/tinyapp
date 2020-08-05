@@ -10,5 +10,16 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
+      <% if (username === undefined) { %> 
+        <form class="form-inline" action="/login" method="POST">
+          <input class="form-control" type="text" name="username" placeholder="username" style="width: 300px; margin: 1em">
+          <button type="submit" class="btn btn-primary">Sign In</button>
+        </form>
+      <% } else { %> 
+        <form class="form-inline" action="/logout" method="POST">
+          <span style="margin-right: 25px;"> Logged in as: <%= username %> </span>
+          <button type="submit" class="btn btn-primary">Log Out</button>
+        </form>
+      <% } %> 
   </nav>
 </header>

@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 const crypto = require('crypto');
 const morgan = require('morgan');
 
@@ -9,7 +10,13 @@ const PORT = 8080; // default port 8080
 app.set("view engine", "ejs");
 
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
 app.use(morgan('combined'));
+
+app.use((req, res, next)=>{
+  console.log("WHERE", req.cookies);
+  next();
+});
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -25,6 +32,18 @@ const generateRandomString = function(input) {
   return hash.split("").splice(0,6).join("");
 };
 
+app.post("/login", (req, res) => {
+  res
+    .cookie("username", req.body.username)
+    .send("/urls");
+});
+
+app.post("/logout", (req, res) => {
+  res
+    .clearCookie("username")
+    .redirect("/urls");
+});
+
 /**
  *
  */
@@ -36,23 +55,61 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  let templateVars;
+  try {
+    templateVars.username = req.cookies["username"];
+  } catch (error) {
+    templateVars.username = undefined;
+    console.log("cannot find cookie");
+  }
+  try {
+    templateVars.username = req.cookies["username"];
+  } catch (error) {
+    templateVars.username = undefined;
+    console.log("cannot find cookie");
+  }
+  res.render("urls_new", templateVars);
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let templateVars = { urls: urlDatabase};
+
+  try {
+    templateVars.username = req.cookies["username"];
+    console.log("TESTING:", req.cookies["username"]);
+  } catch (error) {
+    console.log("NONE");
+    templateVars.username = undefined;
+    console.log("cannot find cookie");
+  }
+
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  let templateVars = { shortURL, longURL: urlDatabase[shortURL] };
+  let templateVars = { shortURL, longURL: urlDatabase[shortURL]};
+
+  
+  try {
+    templateVars.username = req.cookies["username"];
+  } catch (error) {
+    templateVars.username = undefined;
+    console.log("cannot find cookie");
+  }
+  
   res.render("urls_show", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   let templateVars = { shortURL, longURL: urlDatabase[shortURL] };
+  try {
+    templateVars.username = req.cookies["username"];
+  } catch (error) {
+    console.log("cannot find cookie");
+  }
+  
   res.render("urls_show", templateVars);
 });
 
