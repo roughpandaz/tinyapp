@@ -22,6 +22,11 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+// const urlDatabase = {
+//   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+//   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+// };
+
 const users = {
   "userRandomID": {
     id: "userRandomID",
@@ -30,12 +35,21 @@ const users = {
   }
 };
 
+app.use((req,res,next)=>{
+  req.isLoggedIn = false;
+  const userId = req.cookies["user_id"];
+  if (userId && users[userId]) {
+    req.isLoggedIn = true;
+  }
+  next();
+});
+
 // Set user cookie object
 const setCookieTemplateVars = function(req) {
   let responseObj = {};
   try {
     responseObj.userId = users[req.cookies["user_id"]];
-    console.log(req.cookies["user_id"]);
+    console.log("Cookie found");
   } catch (error) {
     responseObj.userId = undefined;
     console.log("cannot find cookie");
@@ -107,11 +121,24 @@ app.post("/user/logout", (req, res) => {
     .redirect("/urls");
 });
 
+/**
+ * URL Routes
+ */
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  if (urlDatabase[shortURL]) {
+    return res.redirect(urlDatabase[shortURL]);
+  }
+  return res.send("URL not find");
+});
 
 /**
  * URL Routes
  */
 app.post("/urls/:shortURL/delete", (req, res) => {
+  if (!req.isLoggedIn) {
+    return res.redirect('/user/login');
+  }
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   res.redirect(`/urls/`);
@@ -119,25 +146,29 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 // EDIT: Long URL
 app.post("/urls/:shortURL/edit", (req, res) => {
+  if (!req.isLoggedIn) {
+    return res.redirect('/user/login');
+  }
   const shortURL = req.params.shortURL;
   const longURL = req.body.longURL;
   urlDatabase[shortURL] = longURL;
   res.redirect(`/urls/`);
 });
 
-app.post("/urls", (req, res) => {
-  const longURL = req.body.longURL;
-  const shortURL = generateRandomString(longURL);
-  urlDatabase[shortURL] = longURL;
-  res.redirect(`/urls/${shortURL}`);
-});
-
 app.get("/urls/new", (req, res) => {
+  if (!req.isLoggedIn) {
+    return res.redirect('/user/login');
+  }
   let templateVars = setCookieTemplateVars(req);
   res.render("urls_new", templateVars);
 });
 
+
 app.get("/urls/:shortURL", (req, res) => {
+  if (!req.isLoggedIn) {
+    return res.redirect('/user/login');
+  }
+
   const shortURL = req.params.shortURL;
 
   let templateVars = setCookieTemplateVars(req);
@@ -152,6 +183,13 @@ app.get("/urls", (req, res) => {
   templateVars.urls = urlDatabase;
 
   res.render("urls_index", templateVars);
+});
+
+app.post("/urls", (req, res) => {
+  const longURL = req.body.longURL;
+  const shortURL = generateRandomString(longURL);
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.get("/", (req, res) => {
