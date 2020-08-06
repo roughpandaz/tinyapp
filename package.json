@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node express_server.js",
-    "dev": "nodemon -e .ejs js express_server.js",
+    "dev": "nodemon -e js,ejs  express_server.js",
     "test": "mocha"
   },
   "keywords": [],
