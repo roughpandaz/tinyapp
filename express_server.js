@@ -1,7 +1,9 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+
 const {generateRandomString, generateRandomID} = require("./utils/id-generator");
+const {findUser} = require("./utils/find-user");
 
 const morgan = require('morgan');
 
@@ -28,31 +30,19 @@ const users = {
   }
 };
 
-app.post("/login", (req, res) => {
-  res
-    .cookie("username", req.body.username)
-    .redirect("/urls");
-});
-
-app.post("/logout", (req, res) => {
-  res
-    .clearCookie("username")
-    .redirect("/urls");
-});
-
-
+// Set user cookie object
 const setCookieTemplateVars = function(req) {
   let responseObj = {};
   try {
-    responseObj.username = req.cookies["username"];
+    responseObj.userId = users[req.cookies["user_id"]];
+    console.log(req.cookies["user_id"]);
   } catch (error) {
-    responseObj.username = undefined;
+    responseObj.userId = undefined;
     console.log("cannot find cookie");
   }
 
   return responseObj;
 };
-
 
 
 /**
@@ -67,35 +57,60 @@ app.post("/api/user/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  for (const key in users) {
-    if (users.hasOwnProperty(key)) {
-      console.log(email === users[key].email, users[key].email, email);
-      if (users[key].email === email) {
-        return res
-          .status(409)
-          .send("user already exists");
-      }
-    }
+  const userId = findUser(users, email);
+  if (userId) {
+    return res
+      .status(409)
+      .send("user already exists");
   }
-
+ 
   if (email && email !== "" && password && password !== "") {
     const id = generateRandomID();
     users[id] = {};
     users[id].id = id;
     users[id].email = email;
     users[id].password = password;
-    return res.redirect('/urls');
+
+    return res
+      .cookie("user_id", id)
+      .redirect('/urls');
   }
   
   res.sendStatus(500);
 });
 
 
+app.get("/user/login", (req, res) => {
+  let templateVars = setCookieTemplateVars(req);
+  res.render("login", templateVars);
+});
+
+app.post("/api/user/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  const userId = findUser(users, email);
+  if (userId && users[userId].password === password) {
+    return res
+      .cookie("user_id", userId)
+      .redirect("/urls");
+  }
+  return res
+    .status(403)
+    .send("wrong account info");
+});
+
+// Logout
+app.post("/user/logout", (req, res) => {
+  res
+    .clearCookie("user_id")
+    .redirect("/urls");
+});
+
+
 /**
  * URL Routes
  */
-
-
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
@@ -124,40 +139,17 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  let templateVars = { shortURL, longURL: urlDatabase[shortURL]};
 
-  
-  try {
-    templateVars.username = req.cookies["username"];
-  } catch (error) {
-    templateVars.username = undefined;
-    console.log("cannot find cookie");
-  }
-  
-  res.render("urls_show", templateVars);
-});
+  let templateVars = setCookieTemplateVars(req);
+  templateVars.shortURL = shortURL;
+  templateVars.longURL = urlDatabase[shortURL];
 
-app.get("/urls/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL;
-  let templateVars = { shortURL, longURL: urlDatabase[shortURL] };
-  try {
-    templateVars.username = req.cookies["username"];
-  } catch (error) {
-    console.log("cannot find cookie");
-  }
-  
   res.render("urls_show", templateVars);
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase};
-
-  try {
-    templateVars.username = req.cookies["username"];
-  } catch (error) {
-    templateVars.username = undefined;
-    console.log("cannot find cookie");
-  }
+  let templateVars = setCookieTemplateVars(req);
+  templateVars.urls = urlDatabase;
 
   res.render("urls_index", templateVars);
 });

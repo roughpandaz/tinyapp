@@ -16,6 +16,8 @@ describe('User Endpost', () => {
       .send(user);
 
     assert.equal(res.statusCode, 302);
+    assert.isTrue(res.headers['set-cookie'][0].includes("user_id="));
+    
   });
 
   it('should create the user and be taken to redirect', async() => {
@@ -24,6 +26,7 @@ describe('User Endpost', () => {
       .send(user);
 
     assert.equal(res.statusCode, 409);
+    assert.isUndefined(res.headers['set-cookie']);
   });
 
   it('should create the user and be taken to redirect', async() => {

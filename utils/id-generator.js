@@ -12,4 +12,5 @@ const generateRandomString = function(input) {
 const generateRandomID = function() {
   return crypto.randomBytes(6).toString('hex');
 };
+
 module.exports = {generateRandomString, generateRandomID};
