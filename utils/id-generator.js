@@ -9,8 +9,9 @@ const generateRandomString = function(input) {
   return hash.split("").splice(0,6).join("");
 };
 
-const generateRandomID = function() {
-  return crypto.randomBytes(6).toString('hex');
+const generateRandomID = function(size) {
+  size = size ? size : 6;
+  return crypto.randomBytes(size).toString('hex');
 };
 
 module.exports = {generateRandomString, generateRandomID};
