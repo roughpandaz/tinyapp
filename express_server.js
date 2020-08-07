@@ -31,7 +31,7 @@ app.use(cookieSession({
 
 app.use((req,res,next)=>{
   req.isLoggedIn = false;
-  const userId = req.cookies["user_id"];
+  const userId = req.session["user_id"];
   if (userId && users[userId]) {
     req.isLoggedIn = true;
     req.user = users[userId];
@@ -135,7 +135,13 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   if (!req.isLoggedIn) {
     return res.redirect('/user/login');
   }
+
+  if (urlDatabase[shortURL].userID !== req.user.id) {
+    return res.send("you don't have permission");
+  }
+
   const shortURL = req.params.shortURL;
+  console.log(shortURL);
   delete urlDatabase[shortURL];
   res.redirect(`/urls/`);
 });
@@ -145,9 +151,14 @@ app.post("/urls/:shortURL/edit", (req, res) => {
   if (!req.isLoggedIn) {
     return res.redirect('/user/login');
   }
+
   const shortURL = req.params.shortURL;
   const longURL = req.body.longURL;
-  urlDatabase[shortURL] = longURL;
+  if (urlDatabase[shortURL].userID !== req.user.id) {
+    return res.send("you don't have permission");
+  }
+
+  urlDatabase[shortURL].longURL = longURL;
   res.redirect(`/urls/`);
 });
 
