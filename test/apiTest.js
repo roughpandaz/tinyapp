@@ -16,7 +16,7 @@ describe('User Endpost', () => {
       .send(user);
 
     assert.equal(res.statusCode, 302);
-    assert.isTrue(res.headers['set-cookie'][0].includes("user_id="));
+    assert.isTrue(res.headers['set-cookie'][0].includes("session="));
     
   });
 

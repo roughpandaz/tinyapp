@@ -1,12 +1,11 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 
 const {generateRandomString, generateRandomID} = require("./utils/id-generator");
 const {findUser} = require("./utils/find-user");
-const {urlDatabase, users} = require("./db");
+const {findUser} = require("./db");
 
 const morgan = require('morgan');
 
@@ -20,14 +19,18 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
-app.use(cookieSession({
-  name: 'session',
-  keys: ['key1', 'key2'],
+const urlDatabase = {
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+};
 
-  // Cookie Options
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}));
-
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  }
+};
 
 app.use((req,res,next)=>{
   req.isLoggedIn = false;
@@ -43,7 +46,7 @@ app.use((req,res,next)=>{
 const setCookieTemplateVars = function(req) {
   let responseObj = {};
   try {
-    responseObj.userId = users[req.session["user_id"]];
+    responseObj.userId = users[req.cookies["user_id"]];
     console.log("Cookie found");
   } catch (error) {
     responseObj.userId = undefined;
@@ -78,13 +81,14 @@ app.post("/api/user/register", (req, res) => {
     users[id] = {};
     users[id].id = id;
     users[id].email = email;
-
+    
     const hashedPassword = bcrypt.hashSync(password, 10);
     console.log(hashedPassword);
     users[id].password = hashedPassword;
 
-    req.session['user_id'] = id;
-    return res.redirect('/urls');
+    return res
+      .cookie("user_id", id)
+      .redirect('/urls');
   }
   
   res.sendStatus(500);
@@ -101,10 +105,10 @@ app.post("/api/user/login", (req, res) => {
   const password = req.body.password;
 
   const userId = findUser(users, email);
-
-  if (userId && bcrypt.compareSync(password, users[userId].password)) {
-    req.session['user_id'] = userId;
-    return res.redirect("/urls");
+  if (userId && users[userId].password === password) {
+    return res
+      .cookie("user_id", userId)
+      .redirect("/urls");
   }
   return res
     .status(403)
@@ -113,8 +117,9 @@ app.post("/api/user/login", (req, res) => {
 
 // Logout
 app.post("/user/logout", (req, res) => {
-  req.session = null;
-  return res.redirect("/urls");
+  res
+    .clearCookie("user_id")
+    .redirect("/urls");
 });
 
 /**
