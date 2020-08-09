@@ -73,14 +73,13 @@ app.post("/api/user/register", (req, res) => {
       .send("user already exists");
   }
  
-  if (email && email !== "" && password && password !== "") {
+  if (email !== undefined && email !== "" && password !== undefined && password !== "") {
     const id = generateRandomID();
     users[id] = {};
     users[id].id = id;
     users[id].email = email;
 
     const hashedPassword = bcrypt.hashSync(password, 10);
-    console.log(hashedPassword);
     users[id].password = hashedPassword;
 
     req.session['user_id'] = id;
@@ -136,11 +135,14 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     return res.redirect('/user/login');
   }
 
-  if (urlDatabase[shortURL].userID !== req.user.id) {
-    return res.send("you don't have permission");
+  const shortURL = req.params.shortURL;
+
+  if (urlDatabase[shortURL].userID !== req.user.id && urlDatabase[shortURL].userID !== "demo987asdfakdhsf") {
+    return res
+      .status(409)
+      .send("you don't have permission");
   }
 
-  const shortURL = req.params.shortURL;
   console.log(shortURL);
   delete urlDatabase[shortURL];
   res.redirect(`/urls/`);
@@ -154,8 +156,10 @@ app.post("/urls/:shortURL/edit", (req, res) => {
 
   const shortURL = req.params.shortURL;
   const longURL = req.body.longURL;
-  if (urlDatabase[shortURL].userID !== req.user.id) {
-    return res.send("you don't have permission");
+  if (urlDatabase[shortURL].userID !== req.user.id && urlDatabase[shortURL].userID !== "demo987asdfakdhsf") {
+    return res
+      .status(409)
+      .send("you don't have permission");
   }
 
   urlDatabase[shortURL].longURL = longURL;
@@ -190,7 +194,19 @@ app.get("/urls", (req, res) => {
     return res.redirect('/user/login');
   }
   let templateVars = setCookieTemplateVars(req);
-  templateVars.urls = urlDatabase;
+
+  let resDatabase = {};
+
+  for (const key in urlDatabase) {
+    if (Object.hasOwnProperty.call(urlDatabase, key)) {
+      console.log(key);
+      if (urlDatabase[key].userID === req.user.id || urlDatabase[key].userID === "demo987asdfakdhsf") {
+        console.log(resDatabase);
+        resDatabase[key] = urlDatabase[key];
+      }
+    }
+  }
+  templateVars.urls = resDatabase;
 
   res.render("urls_index", templateVars);
 });

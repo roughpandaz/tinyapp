@@ -1,6 +1,6 @@
 const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "demo987asdfakdhsf" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "demo987asdfakdhsf" }
 };
 
 const users = {

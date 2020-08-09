@@ -32,8 +32,19 @@ describe('User Endpost', () => {
   it('should create the user and be taken to redirect', async() => {
     const res = await request(app)
       .post('/api/user/register')
-      .send({email: "", password: ""});
+      .send({email: "asdfasdf", password: ""});
 
     assert.equal(res.statusCode, 500);
+  });
+
+});
+
+describe('URL endpoint', () => {
+  it('should allow user to delete campaign.', async() => {
+    const res = await request(app)
+      .post('/urls/b6UTxQ/edit')
+      .send({longURL: "https://google.com"});
+
+    assert.equal(res.statusCode, 302);
   });
 });
