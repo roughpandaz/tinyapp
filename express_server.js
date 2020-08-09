@@ -143,7 +143,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
       .send("you don't have permission");
   }
 
-  console.log(shortURL);
   delete urlDatabase[shortURL];
   res.redirect(`/urls/`);
 });
@@ -199,9 +198,7 @@ app.get("/urls", (req, res) => {
 
   for (const key in urlDatabase) {
     if (Object.hasOwnProperty.call(urlDatabase, key)) {
-      console.log(key);
       if (urlDatabase[key].userID === req.user.id || urlDatabase[key].userID === "demo987asdfakdhsf") {
-        console.log(resDatabase);
         resDatabase[key] = urlDatabase[key];
       }
     }
